@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { RadioTower, CheckCircle2, XCircle, RefreshCw } from 'lucide-react';
 
 const SourcesPage = () => {

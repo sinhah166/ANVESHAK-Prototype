@@ -2,8 +2,8 @@ import React from 'react';
 import Plot from 'react-plotly.js';
 
 interface LightCurveProps {
-  time: number[];
-  flux: number[];
+  time?: number[];
+  flux?: number[];
   phase?: number[];
   foldedFlux?: number[];
   inTransitMask?: number[];

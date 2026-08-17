@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Server, Database, Activity, Code } from 'lucide-react';
 
 const SystemPage = () => {

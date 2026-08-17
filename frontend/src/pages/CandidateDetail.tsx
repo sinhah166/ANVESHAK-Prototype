@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Target, Cpu, Clock, Activity, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Cpu, Activity, AlertTriangle } from 'lucide-react';
 import LightCurveChart from '../charts/LightCurveChart';
 import SpectrogramChart from '../charts/SpectrogramChart';
 

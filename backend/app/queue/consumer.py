@@ -28,17 +28,31 @@ async def consume_stream(
         callback: Async function to process each message.
     """
     client = await get_redis_client()
+    from app.queue.producer import _memory_streams
     
-    # Ensure stream and group exist
     try:
+        # Ensure stream and group exist in Redis
         await client.xgroup_create(stream_name, group_name, id="0", mkstream=True)
         logger.info("created_consumer_group", stream=stream_name, group=group_name)
     except Exception as e:
         if "BUSYGROUP" not in str(e):
-            logger.error("failed_to_create_group", error=str(e))
-            raise
-    
-    logger.info("starting_consumer", stream=stream_name, consumer=consumer_name)
+            logger.warning("redis_not_available_using_memory_fallback", error=str(e))
+            # Memory fallback loop
+            if stream_name not in _memory_streams:
+                _memory_streams[stream_name] = asyncio.Queue()
+            
+            logger.info("starting_memory_consumer", stream=stream_name)
+            while True:
+                try:
+                    msg_id, payload = await _memory_streams[stream_name].get()
+                    await callback(msg_id, payload)
+                except asyncio.CancelledError:
+                    break
+                except Exception as mem_err:
+                    logger.error("memory_consumer_error", error=str(mem_err))
+            return
+            
+    logger.info("starting_redis_consumer", stream=stream_name, consumer=consumer_name)
     
     while True:
         try:

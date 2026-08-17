@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Play, Database, Zap, Cpu, Server, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Play, Database, Zap, Cpu, Server, CheckCircle2, Loader2 } from 'lucide-react';
 
 const PipelinePage = () => {
   const [status, setStatus] = useState<any>(null);
@@ -84,7 +84,7 @@ const PipelinePage = () => {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-6 gap-6 relative z-10">
-          {status.stages.map((stage: any, index: number) => {
+          {status.stages.map((stage: any) => {
             const isRunning = stage.status === 'running';
             const isError = stage.status === 'error';
             
