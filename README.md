@@ -147,4 +147,7 @@ All candidates flagged by this system require rigorous independent astronomical 
 
 ---
 
+## ⚠️ Note
+This project is not fully done yet!!!
+
 **Developed with ❤️ for the Astronomical and Open-Source Community.**
