@@ -70,11 +70,11 @@ docker compose up --build -d
 
 ### 2. Access the Platform
 Once the containers are up, the services will be available at:
-- **Mission Control Dashboard:** [http://localhost:5173](http://localhost:5173)
-- **FastAPI Backend (Swagger UI):** [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Mission Control Dashboard:** (link will be available soon)
+- **FastAPI Backend (Swagger UI):** (link will be available soon)
 
 ### 3. Run the Live Demo
-1. Open the Dashboard at [http://localhost:5173](http://localhost:5173)
+1. Open the Dashboard at (link will be available soon)
 2. Click the **RUN DEMO PIPELINE** button in the left sidebar.
 3. Watch the Live Detection Feed populate in real-time as simulated TESS and Radio data streams through the pipeline!
 
