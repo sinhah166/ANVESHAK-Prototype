@@ -1,0 +1,101 @@
+# ==============================================================================
+# ANVESHAK — Docker Compose
+# Autonomous Real-Time Astronomical Signal Detection & Classification Pipeline
+# ==============================================================================
+# Usage: docker compose up --build
+
+services:
+  # ── PostgreSQL ──
+  postgres:
+    image: postgres:16-alpine
+    container_name: anveshak-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-anveshak}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-anveshak_dev_2024}
+      POSTGRES_DB: ${POSTGRES_DB:-anveshak}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-anveshak}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - anveshak-net
+
+  # ── Redis ──
+  redis:
+    image: redis:7-alpine
+    container_name: anveshak-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - anveshak-net
+
+  # ── Backend (FastAPI) ──
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: anveshak-backend
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: postgres
+      REDIS_HOST: redis
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./config:/app/config
+      - ./data:/app/data
+      - ./ml_models:/app/ml_models
+      - ./scripts:/app/scripts
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - anveshak-net
+
+  # ── Frontend (React + Vite) ──
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: anveshak-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./frontend/index.html:/app/index.html
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - anveshak-net
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  anveshak-net:
+    driver: bridge

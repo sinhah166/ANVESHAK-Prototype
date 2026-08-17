@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-background text-text_main;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-surface/80 backdrop-blur-md border border-white/5 rounded-xl shadow-lg;
+  }
+  
+  .glass-panel {
+    @apply bg-surface/50 backdrop-blur-sm border border-white/5 rounded-lg;
+  }
+
+  .nav-link {
+    @apply flex items-center gap-3 px-4 py-3 rounded-lg text-text_muted transition-all duration-200 hover:bg-white/5 hover:text-white;
+  }
+
+  .nav-link.active {
+    @apply bg-primary/10 text-primary font-medium;
+  }
+  
+  .btn-primary {
+    @apply px-4 py-2 bg-primary text-background font-semibold rounded-lg shadow-[0_0_15px_rgba(56,189,248,0.3)] hover:shadow-[0_0_25px_rgba(56,189,248,0.5)] transition-all duration-300;
+  }
+  
+  .badge {
+    @apply px-2 py-1 text-xs font-medium rounded-full border;
+  }
+  
+  .badge-success {
+    @apply bg-success/10 text-success border-success/20;
+  }
+  
+  .badge-warning {
+    @apply bg-warning/10 text-warning border-warning/20;
+  }
+  
+  .badge-danger {
+    @apply bg-danger/10 text-danger border-danger/20;
+  }
+  
+  .badge-primary {
+    @apply bg-primary/10 text-primary border-primary/20;
+  }
+
+  .badge-accent {
+    @apply bg-accent/10 text-accent border-accent/20;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2D3748;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4A5568;
+}
+
+/* Plotly overrides for dark theme */
+.js-plotly-plot .plotly .cursor-crosshair {
+  cursor: crosshair;
+}
