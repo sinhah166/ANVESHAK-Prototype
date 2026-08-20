@@ -1,13 +1,12 @@
 """
 ANVESHAK — Application Configuration
-Loads settings from environment variables and YAML config files.
+Loads settings from environment variables.
 """
 
-import os
+from functools import lru_cache
 from pathlib import Path
 from typing import Optional
 
-import yaml
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
@@ -31,14 +30,18 @@ class Settings(BaseSettings):
     api_port: int = 8000
     cors_origins: str = "http://localhost:5173,http://localhost:3000"
 
-    # ── Data Mode ──
-    data_mode: str = "demo"
+    # ── NASA TAP ──
+    nasa_tap_url: str = "https://exoplanetarchive.ipac.caltech.edu/TAP"
 
-    # ── Logging ──
+    # ── Data Mode ──
+    data_mode: str = "demo"  # "demo" or "live"
+
+    # ── App ──
+    app_env: str = "development"  # "development", "production"
     log_level: str = "INFO"
 
     # ── ML ──
-    ml_model_dir: str = "ml_models"
+    model_storage_path: str = "ml/artifacts"
 
     @property
     def database_url(self) -> str:
@@ -71,60 +74,21 @@ class Settings(BaseSettings):
         env_file_encoding = "utf-8"
 
 
+@lru_cache()
 def get_settings() -> Settings:
     """Get cached settings instance."""
     return Settings()
 
 
-def load_sources_config(config_path: Optional[str] = None) -> list[dict]:
-    """
-    Load source configuration from YAML file.
-
-    Args:
-        config_path: Path to sources.yaml. Defaults to config/sources.yaml.
-
-    Returns:
-        List of source configuration dictionaries.
-    """
-    if config_path is None:
-        # Try multiple locations
-        candidates = [
-            Path("config/sources.yaml"),
-            Path("/app/config/sources.yaml"),
-            Path(__file__).parent.parent.parent.parent / "config" / "sources.yaml",
-        ]
-        for candidate in candidates:
-            if candidate.exists():
-                config_path = str(candidate)
-                break
-
-    if config_path is None or not Path(config_path).exists():
-        # Return default demo config if file not found
-        return [
-            {
-                "id": "synthetic",
-                "name": "Synthetic Demo",
-                "type": "lightcurve",
-                "adapter": "synthetic",
-                "enabled": True,
-            },
-            {
-                "id": "radio_demo",
-                "name": "Radio Demo",
-                "type": "radio",
-                "adapter": "radio_demo",
-                "enabled": True,
-            },
-        ]
-
-    with open(config_path, "r") as f:
-        config = yaml.safe_load(f)
-
-    return config.get("sources", [])
-
-
-# Project paths
-PROJECT_ROOT = Path(__file__).parent.parent.parent
+# ── Project Paths ──
+PROJECT_ROOT = Path(__file__).parent.parent.parent.parent  # anveshak/
+BACKEND_ROOT = Path(__file__).parent.parent.parent  # anveshak/backend/
 DATA_DIR = PROJECT_ROOT / "data"
-DEMO_DATA_DIR = DATA_DIR / "demo"
-ML_MODELS_DIR = PROJECT_ROOT / "ml_models"
+RAW_DATA_DIR = DATA_DIR / "raw"
+PROCESSED_DATA_DIR = DATA_DIR / "processed"
+SAMPLES_DIR = DATA_DIR / "samples"
+ML_ARTIFACTS_DIR = PROJECT_ROOT / "ml" / "artifacts"
+
+# Ensure directories exist
+for d in [RAW_DATA_DIR, PROCESSED_DATA_DIR, SAMPLES_DIR, ML_ARTIFACTS_DIR]:
+    d.mkdir(parents=True, exist_ok=True)

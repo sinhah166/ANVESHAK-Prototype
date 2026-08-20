@@ -1,6 +1,6 @@
 """
 ANVESHAK — FastAPI Application
-Main entry point and application setup.
+Autonomous Exoplanet Data Analysis & Discovery Platform
 """
 
 from contextlib import asynccontextmanager
@@ -8,11 +8,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import candidates, observations, pipeline, sources, websocket
 from app.core.config import get_settings
 from app.core.logging import get_logger, setup_logging
 from app.models.database import check_db_health, close_db, init_db
-from app.queue.redis_client import check_redis_health, close_redis_client
 
 # Initialize logging early
 setup_logging(get_settings().log_level)
@@ -22,35 +20,66 @@ logger = get_logger("app.main")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifecycle management."""
-    logger.info("application_startup")
-    
+    logger.info("application_startup", mode=get_settings().data_mode)
+
     # Initialize DB (creates tables if they don't exist)
     await init_db()
-    
-    # Load sources into DB
-    from app.services.source_service import SourceService
+
+    # Ensure NASA Exoplanet Archive source exists
     from app.models.database import get_session_factory
-    
-    async with get_session_factory()() as session:
-        service = SourceService(session)
-        await service.initialize_sources()
-        
+    from app.services.ingestion import IngestionService
+
+    try:
+        async with get_session_factory()() as session:
+            service = IngestionService(session)
+            await service.ensure_source_exists()
+    except Exception as e:
+        logger.warning("source_init_failed", error=str(e))
+
+    # Auto-ingest demo data if in demo mode and no data exists
+    settings = get_settings()
+    if settings.data_mode == "demo":
+        try:
+            from sqlalchemy import select, func
+            from app.models.db_models import AstronomicalObject
+            async with get_session_factory()() as session:
+                count_result = await session.execute(
+                    select(func.count()).select_from(AstronomicalObject)
+                )
+                obj_count = count_result.scalar() or 0
+                if obj_count == 0:
+                    logger.info("auto_ingesting_demo_data")
+                    service = IngestionService(session)
+                    await service.ingest_dataset(
+                        table="pscomppars",
+                        max_records=1500,
+                    )
+                    logger.info("demo_data_ingested")
+        except Exception as e:
+            logger.warning("demo_auto_ingest_failed", error=str(e))
+
     yield
-    
+
     logger.info("application_shutdown")
     await close_db()
-    await close_redis_client()
 
 
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
     settings = get_settings()
-    
+
     app = FastAPI(
-        title="ANVESHAK Pipeline API",
-        description="Autonomous Real-Time Astronomical Signal Detection API",
+        title="ANVESHAK — Exoplanet Data Analysis Platform",
+        description=(
+            "Autonomous scientific data-analysis platform that collects publicly available "
+            "astronomical/exoplanet datasets, performs machine-learning-driven analysis, "
+            "identifies unusual/candidate objects, and provides scientists with an interactive "
+            "data-analysis workbench."
+        ),
         version="1.0.0",
         lifespan=lifespan,
+        docs_url="/api/docs",
+        redoc_url="/api/redoc",
     )
 
     # CORS Configuration
@@ -62,28 +91,32 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    # Include Routers
-    app.include_router(sources.router, prefix="/api/sources", tags=["Sources"])
-    app.include_router(observations.router, prefix="/api/observations", tags=["Observations"])
-    app.include_router(candidates.router, prefix="/api/candidates", tags=["Candidates"])
-    app.include_router(pipeline.router, prefix="/api/pipeline", tags=["Pipeline"])
-    app.include_router(websocket.router, tags=["WebSocket"])
+    # Import routers
+    from app.api import datasets, objects, analysis, jobs
+
+    # Register versioned API routes
+    app.include_router(datasets.router, prefix="/api/v1/datasets", tags=["Datasets"])
+    app.include_router(objects.router, prefix="/api/v1/objects", tags=["Objects"])
+    app.include_router(analysis.router, prefix="/api/v1/analysis", tags=["Analysis"])
+    app.include_router(jobs.router, prefix="/api/v1", tags=["Jobs & Ingestion"])
 
     @app.get("/api/health", tags=["System"])
     async def health_check():
         """System health check endpoint."""
         db_ok = await check_db_health()
-        redis_ok = await check_redis_health()
-        
-        status = "healthy" if db_ok and redis_ok else "unhealthy"
-        
         return {
-            "status": status,
+            "status": "healthy" if db_ok else "degraded",
             "database": "connected" if db_ok else "unreachable",
-            "redis": "connected" if redis_ok else "unreachable",
-            "mode": settings.data_mode
+            "mode": settings.data_mode,
+            "version": "1.0.0",
         }
 
+    @app.get("/api/v1/config/mode", tags=["System"])
+    async def get_mode():
+        """Get current data mode."""
+        return {"mode": settings.data_mode}
+
     return app
+
 
 app = create_app()

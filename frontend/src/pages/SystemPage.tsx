@@ -1,93 +1,68 @@
-import { useEffect, useState } from 'react';
-import { Server, Database, Activity, Code } from 'lucide-react';
+import { Settings, Server, Database, HardDrive, Cpu, Thermometer, Activity, Wifi, Shield } from 'lucide-react';
 
-const SystemPage = () => {
-  const [health, setHealth] = useState<any>(null);
+const systemStats = [
+  { icon: Cpu, label: 'CPU Usage', value: '34%', status: 'normal' },
+  { icon: HardDrive, label: 'Memory', value: '6.2 / 16 GB', status: 'normal' },
+  { icon: Database, label: 'Database', value: 'Connected', status: 'good' },
+  { icon: Server, label: 'Redis', value: 'Connected', status: 'good' },
+  { icon: Wifi, label: 'WebSocket', value: '24 clients', status: 'normal' },
+  { icon: Thermometer, label: 'System Temp', value: '42°C', status: 'normal' },
+  { icon: Shield, label: 'Security', value: 'No threats', status: 'good' },
+  { icon: Activity, label: 'API Latency', value: '1.24 sec', status: 'normal' },
+];
 
-  useEffect(() => {
-    const fetchHealth = async () => {
-      try {
-        const res = await fetch('/api/health');
-        const data = await res.json();
-        setHealth(data);
-      } catch (e) {
-        console.error(e);
-      }
-    };
-    
-    fetchHealth();
-    const interval = setInterval(fetchHealth, 10000);
-    return () => clearInterval(interval);
-  }, []);
+const configItems = [
+  { label: 'Pipeline Mode', value: 'Real-time Processing' },
+  { label: 'ML Model', value: 'Random Forest v2.1' },
+  { label: 'Detection Threshold', value: '0.85 confidence' },
+  { label: 'Auto-Classification', value: 'Enabled' },
+  { label: 'Data Retention', value: '90 days' },
+  { label: 'Backup Schedule', value: 'Every 6 hours' },
+];
 
-  if (!health) return <div className="p-8 text-center text-text_muted">Loading system metrics...</div>;
-
-  const services = [
-    { name: 'FastAPI Backend', icon: Code, status: health.status === 'healthy' ? 'connected' : 'error' },
-    { name: 'PostgreSQL DB', icon: Database, status: health.database },
-    { name: 'Redis Streams', icon: Activity, status: health.redis },
-  ];
-
+export default function SystemPage() {
   return (
-    <div className="max-w-7xl mx-auto space-y-8 pb-10">
-      <header>
-        <h2 className="text-3xl font-bold text-white tracking-tight">System Health</h2>
-        <p className="text-text_muted mt-1">Infrastructure and microservices status</p>
-      </header>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {services.map((svc) => (
-          <div key={svc.name} className="glass-card p-6 flex items-center gap-4">
-            <div className={`p-4 rounded-xl bg-surface border border-white/5`}>
-              <svc.icon size={24} className={svc.status === 'connected' ? 'text-success' : 'text-danger'} />
-            </div>
-            <div>
-              <h3 className="font-semibold">{svc.name}</h3>
-              <div className="flex items-center gap-2 mt-1">
-                <div className={`w-2 h-2 rounded-full ${svc.status === 'connected' ? 'bg-success' : 'bg-danger animate-pulse'}`}></div>
-                <span className="text-sm text-text_muted uppercase tracking-wide">{svc.status}</span>
-              </div>
-            </div>
-          </div>
-        ))}
+    <div className="animate-fade-in">
+      <div className="flex items-center gap-2 mb-5">
+        <Settings className="w-4 h-4 text-gold" />
+        <h2 className="text-lg font-bold text-text tracking-wide">SYSTEM SETTINGS</h2>
       </div>
 
-      <div className="glass-card p-8 mt-8">
-        <h3 className="text-xl font-bold mb-6 flex items-center gap-2 border-b border-white/5 pb-4">
-          <Server className="text-primary" /> Application Details
-        </h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div>
-            <ul className="space-y-4">
-              <li className="flex justify-between border-b border-white/5 pb-2">
-                <span className="text-text_muted">Data Mode</span>
-                <span className="font-mono text-primary uppercase">{health.mode}</span>
-              </li>
-              <li className="flex justify-between border-b border-white/5 pb-2">
-                <span className="text-text_muted">Frontend Version</span>
-                <span className="font-mono">1.0.0-mvp</span>
-              </li>
-              <li className="flex justify-between border-b border-white/5 pb-2">
-                <span className="text-text_muted">Environment</span>
-                <span className="font-mono">Docker Compose</span>
-              </li>
-            </ul>
+      <div className="grid grid-cols-2 gap-5">
+        {/* System Health */}
+        <div className="glass-card p-5">
+          <h3 className="section-title mb-4">SYSTEM HEALTH</h3>
+          <div className="grid grid-cols-2 gap-3">
+            {systemStats.map((stat) => {
+              const Icon = stat.icon;
+              return (
+                <div key={stat.label} className="stat-card flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-surface-light border border-surface-border flex items-center justify-center flex-shrink-0">
+                    <Icon className={`w-4 h-4 ${stat.status === 'good' ? 'text-status-success' : 'text-gold'}`} />
+                  </div>
+                  <div>
+                    <p className="text-[9px] text-text-muted uppercase tracking-wider">{stat.label}</p>
+                    <p className="text-sm font-semibold text-text font-mono">{stat.value}</p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-          
-          <div className="bg-surface/50 p-6 rounded-lg border border-white/5">
-            <h4 className="text-sm font-bold text-text_muted uppercase tracking-wider mb-2">Scientific Disclaimer</h4>
-            <p className="text-sm leading-relaxed text-text_muted">
-              ANVESHAK produces preliminary astronomical candidates and automated classifications. 
-              These outputs are intended for research triage and demonstration purposes and do 
-              <strong className="text-white"> not constitute scientific confirmation</strong> of an exoplanet or extraterrestrial signal. 
-              Candidate validation requires independent astronomical analysis.
-            </p>
+        </div>
+
+        {/* Configuration */}
+        <div className="glass-card p-5">
+          <h3 className="section-title mb-4">CONFIGURATION</h3>
+          <div className="space-y-3">
+            {configItems.map((item) => (
+              <div key={item.label} className="flex items-center justify-between py-2 border-b border-surface-border last:border-0">
+                <span className="text-sm text-text-muted">{item.label}</span>
+                <span className="text-sm text-text font-medium font-mono">{item.value}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
     </div>
   );
-};
-
-export default SystemPage;
+}

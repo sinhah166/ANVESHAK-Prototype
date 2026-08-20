@@ -17,6 +17,11 @@ function App() {
         <Route path="pipeline" element={<PipelinePage />} />
         <Route path="sources" element={<SourcesPage />} />
         <Route path="system" element={<SystemPage />} />
+        {/* Aliased routes for sidebar navigation */}
+        <Route path="live-events" element={<Overview />} />
+        <Route path="radio-signals" element={<Overview />} />
+        <Route path="ai-analysis" element={<Overview />} />
+        <Route path="research" element={<Overview />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

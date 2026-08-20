@@ -1,110 +1,78 @@
 """
-ANVESHAK — Base Adapter & Adapter Registry
-Defines the adapter interface and factory for extensible data source integration.
+ANVESHAK — Base Data Adapter & Adapter Registry
+Defines the adapter interface for extensible astronomical data source integration.
 
-To add a new telescope/instrument:
-1. Create a new adapter file implementing BaseAdapter
-2. Register it in ADAPTER_REGISTRY
-3. Add configuration to config/sources.yaml
-4. Restart the application
+To add a new data source:
+1. Create a new adapter file implementing BaseDataAdapter
+2. Register it using @register_adapter("name")
+3. The adapter will be automatically available in the ingestion pipeline
 """
 
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 
+import pandas as pd
+
 from app.core.logging import get_logger
-from app.schemas.observation import ObservationCreate
 
 logger = get_logger("adapter.base")
 
 
-class BaseAdapter(ABC):
+class BaseDataAdapter(ABC):
     """
     Abstract base adapter for astronomical data sources.
 
-    Every data source (telescope, instrument, synthetic generator) must
-    implement this interface to integrate with the ANVESHAK pipeline.
+    Every data source must implement this interface to integrate
+    with the ANVESHAK ingestion and analysis pipeline.
     """
 
     def __init__(self, source_id: str, config: dict[str, Any] | None = None):
-        """
-        Initialize the adapter.
-
-        Args:
-            source_id: Unique source identifier.
-            config: Optional configuration dictionary.
-        """
         self.source_id = source_id
         self.config = config or {}
         self.logger = get_logger(f"adapter.{source_id}")
 
     @abstractmethod
-    async def fetch_new(self, **kwargs) -> list[dict[str, Any]]:
-        """
-        Fetch new raw data from the source.
+    async def fetch_schema(self, table: str) -> pd.DataFrame:
+        """Inspect the table schema/metadata."""
+        ...
 
-        Returns:
-            List of raw data dictionaries in source-specific format.
+    @abstractmethod
+    async def fetch_data(
+        self,
+        table: str,
+        max_records: int = 2000,
+        where: Optional[str] = None,
+    ) -> pd.DataFrame:
+        """Fetch raw data from the source."""
+        ...
+
+    @abstractmethod
+    def validate(self, df: pd.DataFrame) -> dict[str, Any]:
+        """
+        Validate a DataFrame.
+        Returns validation report with issues found.
         """
         ...
 
     @abstractmethod
-    async def normalize(self, raw_data: dict[str, Any]) -> ObservationCreate:
+    def normalize(self, df: pd.DataFrame, column_map: dict[str, str]) -> pd.DataFrame:
         """
-        Normalize a single raw data record into the common schema.
-
-        Args:
-            raw_data: Source-specific raw data dictionary.
-
-        Returns:
-            Normalized ObservationCreate instance.
+        Normalize column names from source schema to internal schema.
         """
         ...
 
     @abstractmethod
+    def get_metadata(self) -> dict[str, Any]:
+        """Return source metadata (name, type, URL, etc.)."""
+        ...
+
     async def health_check(self) -> dict[str, Any]:
-        """
-        Check the health of this data source.
-
-        Returns:
-            Dict with at least 'healthy' (bool) and 'message' (str).
-        """
-        ...
-
-    async def fetch_and_normalize(self, **kwargs) -> list[ObservationCreate]:
-        """
-        Fetch new data and normalize all records.
-
-        This is the primary method called by the pipeline.
-        Errors in individual record normalization are isolated.
-        """
-        try:
-            raw_records = await self.fetch_new(**kwargs)
-            self.logger.info("fetched_records", count=len(raw_records))
-        except Exception as e:
-            self.logger.error("fetch_failed", error=str(e))
-            return []
-
-        observations = []
-        for raw in raw_records:
-            try:
-                obs = await self.normalize(raw)
-                observations.append(obs)
-            except Exception as e:
-                self.logger.warning(
-                    "normalization_failed",
-                    record=str(raw)[:200],
-                    error=str(e),
-                )
-                continue
-
-        self.logger.info("normalized_records", count=len(observations))
-        return observations
+        """Check if the data source is reachable."""
+        return {"healthy": True, "source_id": self.source_id}
 
 
 # ── Adapter Registry ──
-
-ADAPTER_REGISTRY: dict[str, type[BaseAdapter]] = {}
+ADAPTER_REGISTRY: dict[str, type[BaseDataAdapter]] = {}
 
 
 def register_adapter(name: str):
@@ -112,17 +80,17 @@ def register_adapter(name: str):
     Decorator to register an adapter class.
 
     Usage:
-        @register_adapter("tess")
-        class TessAdapter(BaseAdapter):
+        @register_adapter("nasa_exoplanet_archive")
+        class NASAExoplanetArchiveAdapter(BaseDataAdapter):
             ...
     """
-    def decorator(cls: type[BaseAdapter]):
+    def decorator(cls: type[BaseDataAdapter]):
         ADAPTER_REGISTRY[name] = cls
         return cls
     return decorator
 
 
-def get_adapter(name: str, source_id: str, config: dict | None = None) -> BaseAdapter:
+def get_adapter(name: str, source_id: str, config: dict | None = None) -> BaseDataAdapter:
     """
     Factory method to create an adapter instance.
 

@@ -64,9 +64,7 @@ async def get_db():
 async def init_db():
     """Create all tables. Called on application startup."""
     # Import all models so they register with Base.metadata
-    import app.models.observation  # noqa: F401
-    import app.models.candidate  # noqa: F401
-    import app.models.source  # noqa: F401
+    import app.models.db_models  # noqa: F401
 
     engine = get_engine()
     async with engine.begin() as conn:
