@@ -5,6 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11+-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.111.0-009688)
 ![React](https://img.shields.io/badge/React-18.2.0-61DAFB)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4.3-38B2AC)
 ![License](https://img.shields.io/badge/License-MIT-purple)
 
 **ANVESHAK** (Sanskrit for "Searcher" or "Explorer") is a highly scalable, real-time software pipeline designed to autonomously ingest, process, detect, and classify astronomical signals. 
@@ -21,7 +22,12 @@ It is capable of handling multiple data streams simultaneously—ranging from op
   - **Light Curves:** Detrending (Savitzky-Golay), Phase-folding, and Transit Least Squares (TLS) detection.
   - **Radio Spectrograms:** Background subtraction, RFI flagging, and drift-rate calculation.
 - 🧠 **Machine Learning Classification:** Random Forest baseline and rule-based fallback to classify signals (e.g., `planet_candidate`, `eclipsing_binary`, `narrowband_candidate`).
-- 📊 **Stunning Live Dashboard:** A dark-themed, glassmorphic React interface featuring live WebSocket feeds, Plotly.js interactive charts, and Recharts distribution analytics.
+- 📊 **Stunning Mission Control Dashboard:** A premium, dark space-themed React interface with amber/gold accents. Features include:
+  - Live Event Stream with real-time alerts
+  - Interactive Live Telemetry charts
+  - Detailed Exoplanet Candidate views
+  - Visual Pipeline Status Monitor
+  - High-performance glassmorphism UI components
 
 ---
 
@@ -34,7 +40,7 @@ The platform is designed using a microservices-inspired architecture:
 3. **ML Layer:** Classifies the extracted features to determine the nature of the signal and assigns a confidence score.
 4. **Message Broker (Redis):** Publishes the detection events to streams for real-time broadcasting.
 5. **API & Storage (FastAPI + PostgreSQL):** Persists the results and provides REST & WebSocket endpoints.
-6. **Presentation Layer (React):** Consumes the API and WebSocket feeds to render the Mission Control Dashboard.
+6. **Presentation Layer (React):** Consumes the API and renders the beautiful Mission Control Dashboard.
 
 ---
 
@@ -44,7 +50,7 @@ The platform is designed using a microservices-inspired architecture:
 - **Data Science / Astronomy:** NumPy, SciPy, Scikit-Learn, Lightkurve, TransitLeastSquares
 - **Queue / Broker:** Redis Streams
 - **Database:** PostgreSQL
-- **Frontend:** React 18, TypeScript, Vite, Tailwind CSS, Plotly.js, Recharts
+- **Frontend:** React 18, TypeScript, Vite, React Router, Tailwind CSS, Recharts, Lucide Icons
 - **Infrastructure:** Docker, Docker Compose
 
 ---
@@ -56,27 +62,31 @@ The easiest way to run the entire ANVESHAK platform is using **Docker Compose**.
 ### Prerequisites
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Make sure it is running)
 - Git
+- Node.js (If running frontend locally for development)
 
-### 1. Clone & Start
+### 1. Clone & Start Backend Services
 Open your terminal and run:
 ```bash
-# Clone the repository (if you haven't already)
+# Clone the repository
 git clone https://github.com/yourusername/anveshak.git
 cd anveshak
 
-# Build and start all services in detached mode
+# Build and start the backend services
 docker compose up --build -d
 ```
 
-### 2. Access the Platform
-Once the containers are up, the services will be available at:
-- **Mission Control Dashboard:** (link will be available soon)
-- **FastAPI Backend (Swagger UI):** (link will be available soon)
+### 2. Run the Mission Control Dashboard (Frontend)
+To see the stunning dark-themed UI in action:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+The dashboard will be available at **`http://localhost:5173`**
 
 ### 3. Run the Live Demo
-1. Open the Dashboard at (link will be available soon)
-2. Click the **RUN DEMO PIPELINE** button in the left sidebar.
-3. Watch the Live Detection Feed populate in real-time as simulated TESS and Radio data streams through the pipeline!
+1. Open the Dashboard at `http://localhost:5173`
+2. Watch the Live Detection Feed populate in real-time as simulated TESS and Radio data streams through the pipeline!
 
 ---
 
@@ -92,27 +102,23 @@ ANVESHAK/
 │   │   ├── ml/               # Machine Learning models (Random Forest, CNN stubs)
 │   │   ├── models/           # SQLAlchemy ORM Database Models
 │   │   ├── processing/       # Scientific algorithms (Lightcurve, Spectrogram, TLS)
-│   │   ├── queue/            # Redis Producer and Consumer clients
 │   │   ├── schemas/          # Pydantic validation schemas
 │   │   └── services/         # Business logic and Orchestration
-│   ├── tests/                # Pytest suite
 │   ├── requirements.txt      # Python dependencies
 │   └── Dockerfile            # Backend container definition
 │
 ├── frontend/                 # React & Vite Application
+│   ├── public/               # Static assets (Imagery)
 │   ├── src/
-│   │   ├── charts/           # Interactive Plotly.js scientific charts
-│   │   ├── components/       # UI Components (Layout, StatsCards, LiveFeed)
-│   │   ├── hooks/            # Custom hooks (useWebSocket)
-│   │   └── pages/            # Dashboard Views (Overview, Candidates, Pipeline)
+│   │   ├── components/       # Reusable UI (Layout, Glass Cards, Status Badges)
+│   │   ├── pages/            # Dashboard Views (Overview, Candidates, Pipeline, etc.)
+│   │   ├── index.css         # Tailwind theme & custom space animations
+│   │   └── App.tsx           # Application Router
 │   ├── package.json          # Node dependencies
-│   ├── tailwind.config.js    # Theme styling
-│   └── Dockerfile            # Frontend container definition
+│   ├── tailwind.config.js    # Amber/Gold space theme configuration
+│   └── vite.config.ts        # Vite configuration & proxy
 │
 ├── config/                   # System configuration files
-│   └── sources.yaml          # Active data source definitions
-│
-├── .env.example              # Environment variables template
 └── docker-compose.yml        # Multi-container orchestration
 ```
 
@@ -140,14 +146,10 @@ All candidates flagged by this system require rigorous independent astronomical 
 
 ## 🔮 Future Roadmap
 
-- [ ] **Phase 13: Full Test Suite Coverage** (Unit tests for TLS algorithms and data normalization)
 - [ ] **CNN Integration:** Replace the baseline Random Forest classifier with a deep PyTorch CNN for spectrogram classification.
 - [ ] **SETI TurboSETI Integration:** Connect to Berkeley's TurboSETI for advanced radio drift-rate detection.
-- [ ] **User Authentication:** Add JWT-based logins for multi-user mission control teams.
+- [ ] **Full Test Suite Coverage:** Unit tests for TLS algorithms and data normalization.
 
 ---
-
-## ⚠️ Note
-This project is not fully done yet!!!
 
 **Developed with ❤️ for the Astronomical and Open-Source Community.**
